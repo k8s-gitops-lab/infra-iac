@@ -1,16 +1,17 @@
 .PHONY: init build-master build-worker build add-master add-worker add
 
 PACKER ?= packer
+PACKER_BUILD_FLAGS ?= -force
 OUTPUT_DIR := output
 
 init:
 	$(PACKER) init .
 
 build-master: init
-	$(PACKER) build master.pkr.hcl
+	$(PACKER) build $(PACKER_BUILD_FLAGS) -only=k8s-master.vagrant.master .
 
 build-worker: init
-	$(PACKER) build worker.pkr.hcl
+	$(PACKER) build $(PACKER_BUILD_FLAGS) -only=k8s-worker.vagrant.worker .
 
 build: build-master build-worker
 

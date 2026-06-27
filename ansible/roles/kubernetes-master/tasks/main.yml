@@ -1,3 +1,11 @@
+- name: Ensure swap is off before starting control plane
+  ansible.builtin.command: swapoff -a
+  tags:
+    - kubernetes-master
+    - control-plane
+    - kubeadm
+    - swap
+
 - name: Copy kubeadm config
   ansible.builtin.template:
     src: kubeadm-config.yaml.j2

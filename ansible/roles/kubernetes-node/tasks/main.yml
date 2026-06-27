@@ -1,3 +1,11 @@
+- name: Ensure swap is off before joining worker node
+  ansible.builtin.command: swapoff -a
+  tags:
+    - kubernetes-node
+    - worker
+    - join
+    - swap
+
 - name: Check if node already joined the cluster
   ansible.builtin.stat:
     path: /etc/kubernetes/kubelet.conf
