@@ -1,0 +1,42 @@
+---
+# Phase 2 : initialisation du cluster Kubernetes
+#
+# Ce playbook exécute uniquement les tâches qui nécessitent un cluster actif.
+# Tout ce qui peut être fait sans cluster tourne dans les images Packer (phase 1).
+#
+# Tâches exclues de Packer (skip-tags appliqués dans les .pkr.hcl) :
+#   master.pkr.hcl : kubeadm, kubeconfig, cni, flannel, metrics-server,
+#                    join-command, platform
+#   worker.pkr.hcl : join
+#
+# Opportunités de migration vers Packer (non encore exploitées) :
+#   - binaire Helm : téléchargement + copie d'un binaire statique, aucun
+#     cluster requis ; seuls helm repo add / upgrade --install doivent rester
+#     en phase 2.
+#
+# Prérequis : les VMs sont démarrées et l'inventaire est à jour.
+# Ordre d'exécution : init master → join workers → déploiement platform.
+
+- hosts: kubernetes-master
+  roles:
+    - role: kubernetes-master
+      become: true
+      tags:
+        - kubernetes-master
+        - control-plane
+
+- hosts: kubernetes-node
+  roles:
+    - role: kubernetes-node
+      become: true
+      tags:
+        - kubernetes-node
+        - worker
+
+- hosts: kubernetes-master
+  roles:
+    - role: kubernetes-platform
+      become: true
+      tags:
+        - kubernetes-platform
+        - platform

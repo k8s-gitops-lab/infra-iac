@@ -1,4 +1,5 @@
 .vagrant/
+packer/output/
 *.retry
 .DS_Store
 
