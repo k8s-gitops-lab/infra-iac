@@ -1,3 +1,6 @@
+SHELL := /bin/bash -e -o pipefail
+.SHELLFLAGS := -e -o pipefail -c
+
 .PHONY: help up vagrant-up ansible-provision create-cluster ansible-cluster status down destroy
 
 help: ## Affiche cette aide
