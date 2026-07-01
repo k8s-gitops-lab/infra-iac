@@ -1,5 +1,6 @@
 - name: Ensure swap is off before joining worker node
   ansible.builtin.command: swapoff -a
+  when: ansible_facts['swaptotal_mb'] > 0
   tags:
     - kubernetes-node
     - worker

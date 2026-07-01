@@ -31,24 +31,28 @@
     - platform
     - helm
 
+# Manifest multi-ressources (plusieurs CRDs) : un test de sous-chaîne sur la
+# sortie ne peut pas donner un changed/pas-changed fiable pour l'ensemble
+# (cf. Install local-path-provisioner et Apply MetalLB address pool
+# ci-dessous, même remarque). On assume "changed" par défaut.
 - name: Install Gateway API CRDs
   ansible.builtin.command: >-
     kubectl apply -f
     https://github.com/kubernetes-sigs/gateway-api/releases/download/{{ gateway_api_version }}/standard-install.yaml
   register: gateway_api_apply
-  changed_when: "'unchanged' not in gateway_api_apply.stdout"
   run_once: true
   tags:
     - kubernetes-platform
     - platform
     - gateway-api
 
+# Manifest multi-ressources (namespace, serviceaccount, clusterrole(binding),
+# configmap, deployment, storageclass) : même remarque que ci-dessus.
 - name: Install local-path-provisioner
   ansible.builtin.command: >-
     kubectl apply -f
     https://raw.githubusercontent.com/rancher/local-path-provisioner/{{ local_path_provisioner_version }}/deploy/local-path-storage.yaml
   register: local_path_apply
-  changed_when: "'unchanged' not in local_path_apply.stdout"
   run_once: true
   tags:
     - kubernetes-platform
@@ -191,10 +195,11 @@
     - platform
     - metallb
 
+# Manifest à deux ressources (IPAddressPool + L2Advertisement) : même remarque
+# que pour Install Gateway API CRDs ci-dessus.
 - name: Apply MetalLB address pool
   ansible.builtin.command: kubectl apply -f /tmp/kubernetes-platform/metallb-config.yaml
   register: metallb_config_apply
-  changed_when: "'unchanged' not in metallb_config_apply.stdout"
   run_once: true
   tags:
     - kubernetes-platform
@@ -244,12 +249,13 @@
     - tls
 
 - name: Apply wildcard TLS Secret for shared Gateway
-  ansible.builtin.shell: >-
-    kubectl -n {{ traefik_gateway_namespace }}
-    create secret tls {{ traefik_gateway_tls_secret_name }}
-    --cert=/tmp/kubernetes-platform/wildcard-tls.crt
-    --key=/tmp/kubernetes-platform/wildcard-tls.key
-    --dry-run=client -o yaml | kubectl apply -f -
+  ansible.builtin.shell: |
+    set -o pipefail
+    kubectl -n {{ traefik_gateway_namespace }} \
+      create secret tls {{ traefik_gateway_tls_secret_name }} \
+      --cert=/tmp/kubernetes-platform/wildcard-tls.crt \
+      --key=/tmp/kubernetes-platform/wildcard-tls.key \
+      --dry-run=client -o yaml | kubectl apply -f -
   register: gateway_tls_secret_apply
   changed_when: "'unchanged' not in gateway_tls_secret_apply.stdout"
   run_once: true

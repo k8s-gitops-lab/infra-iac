@@ -1,23 +1,23 @@
 ---
+# gateway_api_version, metallb_chart_version, metallb_addresses et
+# traefik_chart_version sont declares dans group_vars/all.yml (source de
+# verite synchronisee avec control-plane/platform.yml) : ne pas les
+# redeclarer ici, group_vars a de toute facon une precedence plus haute que
+# les defaults de role et masquerait silencieusement toute modification
+# faite ici.
 helm_version: "3.18.6"
 helm_arch: "{{ 'arm64' if ansible_facts['architecture'] in ['aarch64', 'arm64'] else 'amd64' }}"
 helm_binary_path: /usr/local/bin/helm
-
-gateway_api_version: "v1.5.1"
 
 local_path_provisioner_version: "v0.0.31"
 local_path_provisioner_namespace: local-path-storage
 local_path_storage_class_name: local-path
 
 metallb_namespace: metallb-system
-metallb_chart_version: "0.14.9"
 metallb_pool_name: vagrant-pool
 metallb_l2_advertisement_name: vagrant-l2
-metallb_addresses:
-  - "192.168.33.100-192.168.33.120"
 
 traefik_namespace: traefik
-traefik_chart_version: "41.0.0"
 traefik_dashboard_host: dashboard.localhost
 
 traefik_gateway_name: traefik-gateway

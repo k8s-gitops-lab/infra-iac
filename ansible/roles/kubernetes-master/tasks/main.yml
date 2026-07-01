@@ -1,5 +1,6 @@
 - name: Ensure swap is off before starting control plane
   ansible.builtin.command: swapoff -a
+  when: ansible_facts['swaptotal_mb'] > 0
   tags:
     - kubernetes-master
     - control-plane
@@ -117,6 +118,7 @@
     content: "{{ kubeconfig_admin_conf.content | b64decode }}"
     dest: "{{ kubeconfig_local_path }}"
     mode: '0600'
+    backup: true
   delegate_to: localhost
   become: false
   no_log: true

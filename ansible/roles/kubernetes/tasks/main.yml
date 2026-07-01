@@ -16,7 +16,7 @@
     - kube-prereqs
     - swap
 
-- name: Enable SELinux in enforcing mode
+- name: Disable SELinux
   ansible.posix.selinux:
     policy: targeted
     state: disabled

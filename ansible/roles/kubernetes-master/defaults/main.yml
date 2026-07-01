@@ -1,6 +1,10 @@
 ---
 force_cluster_reset: false
 kubeconfig_local_update: true
+# Remplace le kubeconfig par defaut de l'operateur (requis : control-plane et
+# platform-cicd invoquent kubectl sans --kubeconfig explicite). La tache qui
+# ecrit ce fichier utilise `backup: true`, donc l'ancien contenu (autres
+# contextes/clusters eventuels) est sauvegarde a cote avant d'etre remplace.
 kubeconfig_local_path: "{{ lookup('env', 'HOME') }}/.kube/config"
 kubeadm_control_plane_timeout: "5m0s"
 kubeadm_api_call_timeout: "2m0s"
