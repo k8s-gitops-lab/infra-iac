@@ -12,7 +12,7 @@ gitlab_url: "https://gitlab.{{ gitlab_domain }}"
 argocd_url: "https://argocd.{{ gitlab_domain }}"
 
 # platform-cicd porte les scripts Python et les manifests ArgoCD (argocd/,
-# scripts/) consommés par ce rôle. Ce dépôt (cluster) ne les duplique pas ;
+# scripts/) consommés par ce rôle. Ce dépôt (infrastructure) ne les duplique pas ;
 # le chemin par défaut suppose le layout sibling standard du POC et peut être
 # surchargé (-e platform_cicd_root=...) si l'appelant est ailleurs.
 platform_cicd_root: "{{ playbook_dir }}/../../platform-cicd"

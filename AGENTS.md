@@ -44,7 +44,7 @@ suppose le checkout sibling standard du POC ; `platform-cicd/Makefile` la
 surcharge explicitement avec `-e platform_cicd_root=$(CURDIR)`).
 
 `platform-cicd/Makefile` invoque ce rôle en relatif
-(`cd ../cluster/ansible && ansible-playbook playbook-platform.yml --tags
+(`cd ../infrastructure/ansible && ansible-playbook playbook-platform.yml --tags
 <étape>`) — c'est un couplage assumé entre les deux dépôts, pas une
 duplication : ne pas recréer de logique de bootstrap ArgoCD/Flux/GitLab
 ailleurs que dans ce rôle.
