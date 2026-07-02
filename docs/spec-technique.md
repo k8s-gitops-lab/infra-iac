@@ -22,14 +22,21 @@ services.
 
 ## Provisionnement
 
+`vagrant/Vagrantfile` référence les boxes par nom (`k8s-master`, `k8s-worker`)
+avec pour source `packer/output/<box>/package.box` : `vagrant up` (donc
+`make up` et `make create-cluster`, qui l'appellent tous les deux via
+`vagrant-up`) suppose que ces boxes ont déjà été construites (`make -C
+packer build`) et enregistrées localement (`vagrant box add`). Il n'y a plus
+de chemin indépendant de Packer.
+
 `make up` exécute :
 
 1. `vagrant up --provider=virtualbox` dans `vagrant/` ;
 2. `ansible-galaxy collection install -r requirements.yml` ;
 3. `ansible-playbook -i inventory.ini playbook.yml`.
 
-`make create-cluster` démarre les VMs puis lance `playbook-cluster.yml`, utile
-pour le chemin basé sur les images Packer.
+`make create-cluster` démarre les VMs puis lance `playbook-cluster.yml`
+(phase 2 : initialisation du cluster sur les images Packer déjà construites).
 
 ## Frontière de responsabilité
 

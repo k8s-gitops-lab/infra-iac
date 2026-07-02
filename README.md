@@ -4,9 +4,20 @@ Socle Kubernetes local du POC : Vagrant, Ansible, kubeadm/containerd, MetalLB, T
 
 ## Usage
 
+Prerequis : les boxes Vagrant `k8s-master`/`k8s-worker` doivent deja etre
+enregistrees localement (le `Vagrantfile` les reference par nom, source
+`packer/output/<box>/package.box`). Sur une machine neuve, construire les
+images d'abord :
+
 ```sh
+make -C packer build
+vagrant box add k8s-master packer/output/k8s-master/package.box --force
+vagrant box add k8s-worker packer/output/k8s-worker/package.box --force
 make up
 ```
+
+Si les boxes sont deja enregistrees (execution precedente), `make up` seul
+suffit.
 
 Le cluster expose Traefik via MetalLB. Par defaut, le pool est configure dans `ansible/group_vars/all.yml` avec `192.168.33.100-192.168.33.120`.
 
