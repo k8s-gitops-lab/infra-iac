@@ -1,0 +1,20 @@
+---
+argocd_namespace: argocd
+argocd_version: v3.4.4
+argocd_wait_timeout: 600s
+corporate_ca_label: Zscaler
+flux_namespace: flux-system
+sops_age_key_file: "{{ lookup('env', 'HOME') }}/.config/sops/age/keys.txt"
+gitlab_domain: 192.168.33.100.nip.io
+gitlab_namespace: gitlab
+gitlab_ready_timeout: 600
+gitlab_url: "https://gitlab.{{ gitlab_domain }}"
+argocd_url: "https://argocd.{{ gitlab_domain }}"
+
+# platform-cicd porte les scripts Python et les manifests ArgoCD (argocd/,
+# scripts/) consommés par ce rôle. Ce dépôt (cluster) ne les duplique pas ;
+# le chemin par défaut suppose le layout sibling standard du POC et peut être
+# surchargé (-e platform_cicd_root=...) si l'appelant est ailleurs.
+platform_cicd_root: "{{ playbook_dir }}/../../platform-cicd"
+argocd_install_filter: "{{ platform_cicd_root }}/scripts/filter-argocd-install.py"
+argocd_install_url: "https://raw.githubusercontent.com/argoproj/argo-cd/{{ argocd_version }}/manifests/install.yaml"

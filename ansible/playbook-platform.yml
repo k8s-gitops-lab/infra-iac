@@ -1,0 +1,6 @@
+---
+- name: Bootstrap ArgoCD, Flux et GitLab sur le cluster courant
+  hosts: local
+  gather_facts: false
+  roles:
+    - role: platform_bootstrap

@@ -3,14 +3,19 @@
 ## Rôle du dépôt
 
 `cluster` fournit le socle Kubernetes local du POC via Vagrant, Ansible et
-Packer. Il ne déploie ni GitLab, ni ArgoCD, ni les applications — uniquement
-le cluster et ses add-ons réseau bas niveau.
+Packer (provisioning bas niveau : runtime, kubeadm, réseau, add-ons). Il
+héberge aussi, depuis la fusion de tout le code Ansible du POC dans ce dépôt,
+le rôle `platform_bootstrap` qui installe ArgoCD/Flux/GitLab sur le cluster
+pour le compte de `platform-cicd` — voir plus bas.
 
 ## Structure
 
 ```
 vagrant/       Vagrantfile — 1 master + 1 worker VirtualBox
 ansible/       Playbooks et rôles Ansible
+  playbook.yml          Provisioning cluster (zscaler, containerd, kubeadm, add-ons)
+  playbook-cluster.yml  Initialisation du cluster sur images Packer (phase 2)
+  playbook-platform.yml Bootstrap ArgoCD/Flux/GitLab, appelé depuis platform-cicd
   roles/
     zscaler/           Certificat CA corporate
     containerd/        Runtime de conteneurs
@@ -18,8 +23,31 @@ ansible/       Playbooks et rôles Ansible
     kubernetes-master/ Init kubeadm, flannel, metrics-server, local-path-provisioner
     kubernetes-node/   Join du worker au cluster
     kubernetes-platform/ Gateway API, MetalLB, Traefik, Gateway partagée
+    platform_bootstrap/ Séquence de bootstrap ArgoCD/Flux/GitLab (une tâche/tag
+                         par étape), pour le compte de platform-cicd
+    argocd_trust_ca/    Rôle paramétré réutilisé deux fois par platform_bootstrap
+                         (CA corporate pour argocd-repo-server, CA Gateway locale
+                         pour argocd-dex-server)
 packer/        Builds d'images VM reproductibles (k8s-master, k8s-worker)
 ```
+
+## Rôle `platform_bootstrap` (appelé depuis `platform-cicd`)
+
+Ce rôle exécute la logique historiquement portée par
+`platform-cicd/ansible/playbook.yml` (installation ArgoCD, confiance CA,
+root Application, secret SOPS pour Flux, credentials GitLab). Il ne porte
+pas les scripts Python ni les manifests ArgoCD qu'il invoque (`scripts/*.py`,
+`argocd/*.yaml`) — ceux-ci restent dans `platform-cicd`, propriétaire de la
+séquence de bootstrap applicatif. Le rôle les référence via la variable
+`platform_cicd_root` (défaut : `{{ playbook_dir }}/../../platform-cicd`,
+suppose le checkout sibling standard du POC ; `platform-cicd/Makefile` la
+surcharge explicitement avec `-e platform_cicd_root=$(CURDIR)`).
+
+`platform-cicd/Makefile` invoque ce rôle en relatif
+(`cd ../cluster/ansible && ansible-playbook playbook-platform.yml --tags
+<étape>`) — c'est un couplage assumé entre les deux dépôts, pas une
+duplication : ne pas recréer de logique de bootstrap ArgoCD/Flux/GitLab
+ailleurs que dans ce rôle.
 
 ## Versions
 
@@ -56,7 +84,12 @@ playbook existant.
 
 ## Ce qu'il ne faut pas faire
 
-- Ne pas déployer GitLab, ArgoCD ou des applications depuis ce dépôt.
+- Ne pas dupliquer la logique de déploiement ArgoCD/GitLab/Flux ailleurs que
+  dans `ansible/roles/platform_bootstrap/` — c'est le seul rôle qui porte
+  cette responsabilité pour le compte de `platform-cicd`.
+- Ne pas déplacer les scripts (`scripts/*.py`) ou manifests (`argocd/*.yaml`)
+  de `platform-cicd` vers ce dépôt : ils restent la propriété de
+  `platform-cicd`, référencés via `platform_cicd_root`.
 - Ne pas modifier `group_vars/all.yml` sans mettre à jour `platform.yml` dans
   `control-plane`.
 - Ne pas committer les fichiers générés dans `packer/output/` ni les fichiers
