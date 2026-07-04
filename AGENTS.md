@@ -1,8 +1,8 @@
-# AGENTS.md — cluster
+# AGENTS.md — infrastructure
 
 ## Rôle du dépôt
 
-`cluster` fournit le socle Kubernetes local du POC via Vagrant, Ansible et
+`infrastructure` fournit le socle Kubernetes local du POC via Vagrant, Ansible et
 Packer (provisioning bas niveau : runtime, kubeadm, réseau, add-ons). Il
 héberge aussi, depuis la fusion de tout le code Ansible du POC dans ce dépôt,
 le rôle `platform_bootstrap` qui installe ArgoCD/Flux/GitLab sur le cluster

@@ -1,4 +1,4 @@
-# cluster
+# infrastructure
 
 Socle Kubernetes local du POC : Vagrant, Ansible, kubeadm/containerd, MetalLB, Traefik, Gateway API et Gateway partagee.
 
@@ -23,7 +23,7 @@ Le cluster expose Traefik via MetalLB. Par defaut, le pool est configure dans `a
 
 Le role Ansible installe aussi `local-path-provisioner` et definit la StorageClass `local-path` comme classe par defaut pour les PVC locaux du POC.
 
-Ce repo ne deploie pas GitLab, ArgoCD, le registry ni les applications. Ces composants vivent dans `platform-cicd`.
+Ce repo ne deploie pas GitLab, ArgoCD ni les applications. Ces composants vivent dans `platform-cicd`.
 
 ## Principe : build-time vs runtime
 

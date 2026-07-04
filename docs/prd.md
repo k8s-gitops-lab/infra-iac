@@ -2,12 +2,12 @@
 
 ## Intention du projet
 
-`cluster` fournit le socle Kubernetes local du POC. Il prépare un
+`infrastructure` fournit le socle Kubernetes local du POC. Il prépare un
 cluster capable d'héberger `platform-cicd`, mais ne déploie pas GitLab,
-ArgoCD, le registry ni les applications.
+ArgoCD ni les applications.
 
 La vision globale de la chaîne CI/CD est dans
-`../../platform-cicd/docs/prd.md`.
+`../../control-plane/docs/prd.md`.
 
 ## Produit attendu
 
