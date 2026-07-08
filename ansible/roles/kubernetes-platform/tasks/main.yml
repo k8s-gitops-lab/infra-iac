@@ -105,6 +105,16 @@
     - helm
     - traefik
 
+- name: Add Jetstack Helm repository
+  ansible.builtin.command: "{{ helm_binary_path }} repo add jetstack https://charts.jetstack.io --force-update"
+  changed_when: false
+  run_once: true
+  tags:
+    - kubernetes-platform
+    - platform
+    - helm
+    - cert-manager
+
 - name: Update Helm repositories
   ansible.builtin.command: "{{ helm_binary_path }} repo update"
   changed_when: false
@@ -115,6 +125,7 @@
     - helm
     - metallb
     - traefik
+    - cert-manager
 
 - name: Render MetalLB config
   ansible.builtin.template:
@@ -149,10 +160,22 @@
     - platform-render
     - gateway
 
-- name: Render wildcard TLS OpenSSL config
+- name: Render cert-manager self-signed CA and ClusterIssuer
   ansible.builtin.template:
-    src: wildcard-tls-openssl.cnf.j2
-    dest: /tmp/kubernetes-platform/wildcard-tls-openssl.cnf
+    src: cert-manager-cluster-issuer.yaml.j2
+    dest: /tmp/kubernetes-platform/cert-manager-cluster-issuer.yaml
+    mode: '0644'
+  tags:
+    - kubernetes-platform
+    - platform
+    - platform-render
+    - cert-manager
+    - tls
+
+- name: Render wildcard Certificate for shared Gateway
+  ansible.builtin.template:
+    src: wildcard-certificate.yaml.j2
+    dest: /tmp/kubernetes-platform/wildcard-certificate.yaml
     mode: '0644'
   tags:
     - kubernetes-platform
@@ -232,15 +255,82 @@
     - platform
     - traefik
 
-- name: Generate wildcard TLS certificate for shared Gateway
+- name: Install cert-manager
   ansible.builtin.command: >-
-    openssl req -x509 -nodes -newkey rsa:2048
-    -days {{ traefik_gateway_tls_days }}
-    -keyout /tmp/kubernetes-platform/wildcard-tls.key
-    -out /tmp/kubernetes-platform/wildcard-tls.crt
-    -config /tmp/kubernetes-platform/wildcard-tls-openssl.cnf
-  args:
-    creates: /tmp/kubernetes-platform/wildcard-tls.crt
+    {{ helm_binary_path }} upgrade --install cert-manager jetstack/cert-manager
+    --namespace {{ cert_manager_namespace }}
+    --create-namespace
+    --version {{ cert_manager_chart_version }}
+    --set crds.enabled=true
+  register: cert_manager_helm
+  changed_when: "'Release' in cert_manager_helm.stdout"
+  run_once: true
+  tags:
+    - kubernetes-platform
+    - platform
+    - cert-manager
+
+- name: Wait for cert-manager controller
+  ansible.builtin.command: >-
+    kubectl -n {{ cert_manager_namespace }}
+    rollout status deployment/cert-manager --timeout=180s
+  changed_when: false
+  run_once: true
+  tags:
+    - kubernetes-platform
+    - platform
+    - cert-manager
+
+- name: Wait for cert-manager webhook
+  ansible.builtin.command: >-
+    kubectl -n {{ cert_manager_namespace }}
+    rollout status deployment/cert-manager-webhook --timeout=180s
+  changed_when: false
+  run_once: true
+  tags:
+    - kubernetes-platform
+    - platform
+    - cert-manager
+
+- name: Wait for cert-manager cainjector
+  ansible.builtin.command: >-
+    kubectl -n {{ cert_manager_namespace }}
+    rollout status deployment/cert-manager-cainjector --timeout=180s
+  changed_when: false
+  run_once: true
+  tags:
+    - kubernetes-platform
+    - platform
+    - cert-manager
+
+# Manifest multi-ressources (Issuer + Certificate CA + ClusterIssuer) : meme
+# remarque que pour Install Gateway API CRDs ci-dessus, on assume "changed".
+- name: Apply cert-manager self-signed CA and ClusterIssuer
+  ansible.builtin.command: kubectl apply -f /tmp/kubernetes-platform/cert-manager-cluster-issuer.yaml
+  register: cert_manager_issuer_apply
+  run_once: true
+  tags:
+    - kubernetes-platform
+    - platform
+    - cert-manager
+    - tls
+
+- name: Wait for internal CA ClusterIssuer to be ready
+  ansible.builtin.command: >-
+    kubectl wait --for=condition=Ready
+    clusterissuer/{{ cert_manager_cluster_issuer_name }} --timeout=120s
+  changed_when: false
+  run_once: true
+  tags:
+    - kubernetes-platform
+    - platform
+    - cert-manager
+    - tls
+
+- name: Apply wildcard Certificate for shared Gateway
+  ansible.builtin.command: kubectl apply -f /tmp/kubernetes-platform/wildcard-certificate.yaml
+  register: wildcard_certificate_apply
+  changed_when: "'unchanged' not in wildcard_certificate_apply.stdout"
   run_once: true
   tags:
     - kubernetes-platform
@@ -248,16 +338,11 @@
     - gateway
     - tls
 
-- name: Apply wildcard TLS Secret for shared Gateway
-  ansible.builtin.shell: |
-    set -o pipefail
-    kubectl -n {{ traefik_gateway_namespace }} \
-      create secret tls {{ traefik_gateway_tls_secret_name }} \
-      --cert=/tmp/kubernetes-platform/wildcard-tls.crt \
-      --key=/tmp/kubernetes-platform/wildcard-tls.key \
-      --dry-run=client -o yaml | kubectl apply -f -
-  register: gateway_tls_secret_apply
-  changed_when: "'unchanged' not in gateway_tls_secret_apply.stdout"
+- name: Wait for wildcard Certificate to be issued
+  ansible.builtin.command: >-
+    kubectl -n {{ traefik_gateway_namespace }} wait --for=condition=Ready
+    certificate/{{ traefik_gateway_tls_secret_name }} --timeout=120s
+  changed_when: false
   run_once: true
   tags:
     - kubernetes-platform

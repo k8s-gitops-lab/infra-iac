@@ -25,4 +25,21 @@ traefik_gateway_namespace: default
 traefik_gateway_listener_port: 8000
 traefik_gateway_tls_listener_port: 8443
 traefik_gateway_tls_secret_name: nip-io-wildcard-tls
-traefik_gateway_tls_days: 3650
+
+# cert_manager_chart_version est declare dans group_vars/all.yml, meme regle
+# que pour les autres versions de charts (voir commentaire en tete de fichier).
+cert_manager_namespace: cert-manager
+
+# CA interne auto-signee : un Issuer self-signed bootstrap une Certificate CA,
+# et un ClusterIssuer de type `ca` s'appuie dessus pour signer les
+# certificats applicatifs (ici, le wildcard de la Gateway partagee). Pas de
+# Let's Encrypt/ACME possible ici : le cluster n'a ni domaine public ni
+# exposition Internet (IP privee + noms nip.io).
+cert_manager_selfsigned_issuer_name: poc-lab-selfsigned-issuer
+cert_manager_ca_certificate_name: poc-lab-ca
+cert_manager_ca_secret_name: poc-lab-ca
+cert_manager_ca_common_name: "POC DevOps Lab CA"
+cert_manager_cluster_issuer_name: poc-lab-ca-issuer
+
+wildcard_certificate_duration: 2160h
+wildcard_certificate_renew_before: 360h

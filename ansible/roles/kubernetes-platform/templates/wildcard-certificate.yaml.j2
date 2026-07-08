@@ -1,0 +1,20 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ traefik_gateway_tls_secret_name }}
+  namespace: {{ traefik_gateway_namespace }}
+spec:
+  secretName: {{ traefik_gateway_tls_secret_name }}
+  duration: {{ wildcard_certificate_duration }}
+  renewBefore: {{ wildcard_certificate_renew_before }}
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  commonName: "*.{{ metallb_addresses[0].split('-')[0] }}.nip.io"
+  dnsNames:
+    - "*.{{ metallb_addresses[0].split('-')[0] }}.nip.io"
+    - "{{ metallb_addresses[0].split('-')[0] }}.nip.io"
+  issuerRef:
+    name: {{ cert_manager_cluster_issuer_name }}
+    kind: ClusterIssuer
+    group: cert-manager.io
