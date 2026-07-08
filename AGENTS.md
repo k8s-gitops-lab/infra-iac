@@ -37,6 +37,8 @@ dérive.
 ```bash
 make up                  # Démarrer les VMs et provisionner le cluster
 make create-cluster      # Démarrer les VMs Packer et initialiser le cluster
+make snapshot-cluster    # Snapshot VirtualBox de master-01/worker-01 (SNAPSHOT_NAME, defaut cluster-ready)
+make restore-cluster     # Restaure master-01/worker-01 depuis un snapshot VirtualBox
 make down                # Éteindre les VMs sans les détruire
 make destroy             # Détruire les VMs
 cd packer && make build  # Construire les images VM Packer
